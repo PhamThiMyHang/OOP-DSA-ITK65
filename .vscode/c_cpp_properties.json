@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:/msys64/mingw64/include",
-                "C:/Users/Admin/OneDrive/Documents/THKTVTCMT/SFML-2.6.0/include"
+                "C:/Users/Admin/OneDrive/Documents/BTL OOP_DSA/SFML-2.6.0/include"
             ],
             "defines": [
                 "_DEBUG",

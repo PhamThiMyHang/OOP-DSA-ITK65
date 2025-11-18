@@ -1,350 +1,253 @@
-// Menu.cpp – PHIÊN BẢN HOÀN HẢO NHẤT (18/11/2025)
-#include "Menu.h"
-// Bao gồm file header "Menu.h" đã định nghĩa lớp Menu và các thành viên của nó.
-#include <iostream>
-// Bao gồm thư viện nhập/xuất cơ bản (input/output), dùng cho debug (cerr, cout) nếu cần.
-#include <cmath>
-// Bao gồm thư viện toán học, dùng cho các hàm như sin() để tạo hiệu ứng động (animation).
-#include <cstdlib>
-// Bao gồm thư viện chuẩn, dùng cho hàm srand() và rand() (tạo số ngẫu nhiên).
-#include <ctime>
-// Bao gồm thư viện thời gian, dùng cho hàm time() để gieo mầm cho số ngẫu nhiên.
+
+#include "Menu.h"                  // File header chứa khai báo lớp Menu và Button
+#include <iostream>                // Dùng để in lỗi ra console (std::cerr)
+#include <cmath>                   // Dùng hàm sin() để tạo hiệu ứng nhấp nháy, "thở"
+#include <cstdlib>                 // Dùng srand(), rand() để tạo số ngẫu nhiên cho ngôi sao nền
+#include <ctime>                   // Dùng time() để gieo mầm (seed) cho rand()
+
+// ==================== HÀM HỖ TRỢ ====================
+// Hàm cực kỳ quan trọng: căn giữa chính xác một sf::Text
+// Phải gọi lại mỗi khi thay đổi nội dung (setString) hoặc kích thước chữ (setCharacterSize)
+void centerText(sf::Text& txt) {
+    // getLocalBounds() trả về hình chữ nhật bao quanh chữ
+    // .top thường là số âm → phải cộng lại để origin rơi đúng giữa chữ
+    txt.setOrigin(txt.getLocalBounds().width / 2.f, 
+                  txt.getLocalBounds().height / 2.f + txt.getLocalBounds().top);
+}
 
 // ==================== BUTTON ====================
+// Constructor của nút bấm
 Menu::Button::Button(const std::wstring& s, sf::Font& f, float y, unsigned sz)
-// Hàm khởi tạo (Constructor) của cấu trúc Button:
-// Nhận chuỗi ký tự wide (s), font chữ (f), vị trí Y cơ sở (y) và kích thước font (sz).
- : baseY(y), baseSize(sz) {
-// Danh sách khởi tạo (Initializer list): Gán giá trị y và sz cho các thành viên baseY và baseSize.
- text.setFont(f);
-// Thiết lập font chữ cho đối tượng Text của nút.
- text.setString(s);
-// Thiết lập nội dung (chuỗi) cho Text.
- text.setCharacterSize(sz);
-// Thiết lập kích thước font chữ ban đầu.
- text.setFillColor(sf::Color::White);
-// Thiết lập màu chữ là Trắng.
- text.setStyle(sf::Text::Bold);
-// Thiết lập kiểu chữ là In đậm.
- text.setOrigin(text.getLocalBounds().width / 2, text.getLocalBounds().height / 2);
-// Thiết lập điểm neo (origin) của Text về chính giữa văn bản (giúp căn giữa dễ hơn).
+    : baseY(y), baseSize(sz) {                    // Gán vị trí Y cơ sở và kích thước chữ cơ sở
+    text.setFont(f);                              // Gán font cho chữ trên nút
+    text.setString(s);                            // Nội dung chữ (ví dụ: L"BẮT ĐẦU")
+    text.setCharacterSize(sz);                    // Kích thước chữ ban đầu
+    text.setFillColor(sf::Color::White);          // Màu chữ: trắng
+    text.setStyle(sf::Text::Bold);                // Chữ in đậm
+    centerText(text);                             // Căn giữa chữ ngay từ đầu
 
- box.setSize({720, 100});   // Nút to, dễ bấm trên điện thoại
-// Thiết lập kích thước của hình chữ nhật nền (box) là 720x100.
- box.setOrigin(360, 50);
-// Thiết lập điểm neo của Box về chính giữa hình chữ nhật (720/2, 100/2).
- box.setFillColor(sf::Color(20, 20, 90));
-// Thiết lập màu nền của Box là xanh tím than đậm.
- box.setOutlineThickness(6);
-// Thiết lập độ dày đường viền là 6 pixel.
- box.setOutlineColor(sf::Color(0, 200, 255));
-// Thiết lập màu đường viền là Xanh Cyan nhạt.
+    box.setSize({720, 100});                      // Kích thước nền nút: rộng 720, cao 100 (to, dễ bấm)
+    box.setOrigin(360, 50);                       // Đặt origin vào giữa hình chữ nhật
+    box.setFillColor(sf::Color(20, 20, 90));      // Màu nền: xanh tím đậm
+    box.setOutlineThickness(6);                   // Độ dày viền
+    box.setOutlineColor(sf::Color(0, 200, 255));  // Màu viền: cyan sáng
 }
 
+// Kiểm tra chuột có đang nằm trong nút không
 bool Menu::Button::contains(float x, float y) const {
-// Hàm kiểm tra xem tọa độ chuột (x, y) có nằm trong nút hay không.
- return box.getGlobalBounds().contains(x, y);
-// Trả về true nếu tọa độ (x, y) nằm trong phạm vi hình chữ nhật của Box.
+    return box.getGlobalBounds().contains(x, y);  // getGlobalBounds() trả về vùng thực tế trên màn hình
 }
 
+// Hiệu ứng hover: phóng to khi chuột di vào, thu nhỏ khi ra
 void Menu::Button::update(float dt) {
-// Hàm cập nhật trạng thái của nút, dt là thời gian đã trôi qua (delta time), thường là 1/60 giây.
- float target = hovered ? 1.18f : 1.0f;
-// Thiết lập tỷ lệ phóng to mục tiêu: 1.18f nếu chuột đang hover, 1.0f nếu không.
- float current = box.getScale().x;
-// Lấy tỷ lệ phóng to hiện tại của nút (trục X).
- current += (target - current) * dt * 12.0f;
-// Dùng kỹ thuật nội suy tuyến tính (Lerp) để làm mịn hiệu ứng phóng to.
- box.setScale(current, current);
-// Áp dụng tỷ lệ phóng to mới cho Box.
+    float target = hovered ? 1.18f : 1.0f;        // Nếu đang hover → phóng to 1.18x, không thì 1x
+    float current = box.getScale().x;             // Lấy tỉ lệ hiện tại
+    current += (target - current) * dt * 12.0f;   // Nội suy mượt (lerp) theo thời gian
+    box.setScale(current, current);               // Áp dụng tỉ lệ mới cho cả X và Y
 }
 
+// Vẽ nút lên màn hình – được gọi mỗi frame
 void Menu::Button::draw(sf::RenderWindow& win, float sx, float sy) {
-// Hàm vẽ nút, nhận cửa sổ (win) và tỷ lệ Responsive (sx, sy).
- float centerX = win.getSize().x / 2.0f;
-// Tính toán tâm X của cửa sổ.
- float posY = baseY * sy;
-// Tính toán vị trí Y thực tế dựa trên vị trí Y cơ sở và tỷ lệ Responsive Y (sy).
+    float centerX = win.getSize().x / 2.0f;       // Tâm ngang của cửa sổ
+    float posY = baseY * sy;                      // Tính vị trí Y thực tế theo tỉ lệ responsive
 
- box.setPosition(centerX, posY);
-// Đặt vị trí của Box vào tâm X và vị trí Y đã tính.
- text.setPosition(centerX, posY);
-// Đặt vị trí của Text vào tâm X và vị trí Y đã tính (vì origin đã được căn giữa).
- text.setCharacterSize(static_cast<unsigned>(baseSize * ((sx + sy) / 2)));
-// Cập nhật kích thước chữ dựa trên kích thước cơ sở và tỷ lệ Responsive trung bình (sx+sy)/2.
+    box.setPosition(centerX, posY);               // Đặt vị trí nền nút
+    text.setPosition(centerX, posY);              // Đặt vị trí chữ
 
- win.draw(box);
-// Vẽ hình nền Box lên cửa sổ.
- win.draw(text);
-// Vẽ Text lên cửa sổ (nằm trên Box).
+    // QUAN TRỌNG: Khi resize cửa sổ → chữ phải thay đổi kích thước theo
+    unsigned newSize = static_cast<unsigned>(baseSize * ((sx + sy) / 2));
+    text.setCharacterSize(newSize);               // Cập nhật kích thước chữ
+    centerText(text);                             // Cập nhật lại origin (vì kích thước thay đổi → bounds thay đổi)
+
+    win.draw(box);                                // Vẽ nền trước
+    win.draw(text);                               // Vẽ chữ sau (nằm trên nền)
 }
 
 // ==================== MENU ====================
+// Tạo nền vũ trụ với các ngôi sao ngẫu nhiên
 void Menu::createBackground() {
-// Hàm tạo hình nền tĩnh (background).
- sf::Image img;
-// Khởi tạo đối tượng Image (đại diện cho dữ liệu pixel).
- img.create(900, 600, sf::Color(12, 12, 40));
-// Tạo một ảnh 900x600 với màu nền xanh tím than rất đậm.
- srand(time(nullptr));
-// Gieo mầm (seed) cho bộ sinh số ngẫu nhiên bằng thời gian hiện tại.
- for (int i = 0; i < 220; ++i) {
-// Lặp 220 lần để vẽ các "ngôi sao" (điểm sáng).
- int x = rand() % 900, y = rand() % 600;
-// Chọn ngẫu nhiên tọa độ (x, y) trong phạm vi 900x600.
- img.setPixel(x, y, sf::Color(80, 180, 255, 65));
-// Đặt màu cho pixel đó là màu xanh nhạt, độ mờ (alpha) 65 (rất mờ).
- }
- bgTex.loadFromImage(img);
-// Tải dữ liệu pixel từ Image vào Texture (kết cấu).
- bg.setTexture(bgTex);
-// Thiết lập Texture cho Sprite (Sprite sẽ hiển thị Texture đó).
+    sf::Image img;
+    img.create(900, 600, sf::Color(12, 12, 40));  // Tạo ảnh 900x600 màu xanh đen vũ trụ
+    srand(time(nullptr));                         // Gieo mầm ngẫu nhiên bằng thời gian hiện tại
+    for (int i = 0; i < 220; ++i) {                // Vẽ 220 ngôi sao nhỏ
+        int x = rand() % 900, y = rand() % 600;   // Tọa độ ngẫu nhiên
+        img.setPixel(x, y, sf::Color(80, 180, 255, 65)); // Màu xanh sáng, trong suốt nhẹ
+    }
+    bgTex.loadFromImage(img);                     // Chuyển ảnh thành texture
+    bg.setTexture(bgTex);                         // Gán texture cho sprite nền
 }
 
+// Tính lại tỉ lệ khi cửa sổ thay đổi kích thước
 void Menu::recalcScale() {
-// Hàm tính toán lại tỷ lệ Responsive.
- scaleX = winW / 900.0f;
-// Tỷ lệ X = Chiều rộng cửa sổ hiện tại / Chiều rộng cơ sở (900).
- scaleY = winH / 600.0f;
-// Tỷ lệ Y = Chiều cao cửa sổ hiện tại / Chiều cao cơ sở (600).
- bg.setScale(scaleX, scaleY);
-// Phóng to/thu nhỏ hình nền Sprite theo tỷ lệ mới.
+    scaleX = winW / 900.0f;                       // Tỉ lệ theo chiều ngang
+    scaleY = winH / 600.0f;                       // Tỉ lệ theo chiều dọc
+    bg.setScale(scaleX, scaleY);                  // Phóng to/thu nhỏ nền cho vừa cửa sổ
 }
 
-Menu::Menu(float w, float h) : winW(w), winH(h) {
-// Hàm khởi tạo chính của lớp Menu: w, h là kích thước cửa sổ ban đầu.
- font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf");
-// Tải font chữ từ đường dẫn cố định (cần đảm bảo font này tồn tại).
- createBackground();
-// Gọi hàm tạo hình nền.
- recalcScale();
-// Gọi hàm tính toán tỷ lệ ban đầu.
+// Constructor chính của Menu
+Menu::Menu(float w, float h) : winW(w), winH(h) { // Nhận kích thước cửa sổ ban đầu
+    // Tải font Arial từ Windows (đảm bảo font này có trên mọi máy Windows)
+    if (!font.loadFromFile("C:\\Windows\\Fonts\\arial.ttf")) {
+        std::cerr << "KHÔNG TÌM THẤY FONT ARIAL.TTF!\n"; // Báo lỗi nếu không tìm thấy
+    }
 
- title.setFont(font);
-// Thiết lập font cho tiêu đề chính.
- title.setString(L"GUESS ARENA");
-// Thiết lập nội dung tiêu đề.
- title.setCharacterSize(96);
-// Thiết lập kích thước font tiêu đề.
- title.setFillColor(sf::Color(100, 230, 255));
-// Thiết lập màu chữ.
- title.setOutlineColor(sf::Color::Cyan);
-// Thiết lập màu viền chữ.
- title.setOutlineThickness(4);
-// Thiết lập độ dày viền chữ.
- title.setStyle(sf::Text::Bold);
-// Thiết lập kiểu chữ in đậm.
+    createBackground();                           // Tạo nền sao
+    recalcScale();                                // Tính tỉ lệ ban đầu
 
- // MENU CHÍNH
- mainBtns.emplace_back(L"BẮT ĐẦU", font, 220);
-// Thêm nút "BẮT ĐẦU" vào vector mainBtns, ở vị trí Y cơ sở 220.
- mainBtns.emplace_back(L"HƯỚNG DẪN", font, 320);
- mainBtns.emplace_back(L"CÀI ĐẶT", font, 420);
- mainBtns.emplace_back(L"THOÁT", font, 520);
+    // Thiết lập tiêu đề chính "GUESS ARENA"
+    title.setFont(font);
+    title.setString(L"GUESS ARENA");
+    title.setCharacterSize(96);
+    title.setFillColor(sf::Color(100, 230, 255));
+    title.setOutlineColor(sf::Color::Cyan);
+    title.setOutlineThickness(4);
+    title.setStyle(sf::Text::Bold);
+    centerText(title);                            // Căn giữa tiêu đề
 
- // CHỌN CHẾ ĐỘ
- modeBtns.emplace_back(L"NGƯỜI VS NGƯỜI", font, 230, 56);
- modeBtns.emplace_back(L"NGƯỜI VS MÁY",  font, 330, 56);
- modeBtns.emplace_back(L"QUAY LẠI",  font, 430, 38);
+    // === TẠO CÁC NÚT TRONG MENU CHÍNH ===
+    mainBtns.emplace_back(L"BẮT ĐẦU",    font, 220);    // Nút 1: Y = 220
+    mainBtns.emplace_back(L"HƯỚNG DẪN", font, 320);
+    mainBtns.emplace_back(L"CÀI ĐẶT",    font, 420);
+    mainBtns.emplace_back(L"THOÁT",       font, 520);
 
- // CHỌN ĐỘ  – CÂN ĐẸP, DỄ NHÌN
- levelBtns.emplace_back(L"DỄ",  font, 200, 78);
+    // === MÀN HÌNH CHỌN CHẾ ĐỘ ===
+    modeBtns.emplace_back(L"NGƯỜI VS NGƯỜI", font, 200, 40);
+    modeBtns.emplace_back(L"NGƯỜI VS MÁY",    font, 300, 40);
+    modeBtns.emplace_back(L"QUAY LẠI",       font, 400, 38);
 
- levelBtns.emplace_back(L"TRUNG BÌNH", font, 300, 78);
+    // === MÀN HÌNH CHỌN ĐỘ KHÓ ===
+    levelBtns.emplace_back(L"DỄ",         font, 170, 58);
+    levelBtns.emplace_back(L"TRUNG BÌNH", font, 270, 58);
+    levelBtns.emplace_back(L"KHÓ",         font, 370, 58);
+    levelBtns.emplace_back(L"QUAY LẠI",    font, 470, 48);
 
- levelBtns.emplace_back(L"KHÓ",  font, 400, 78);
+    // Nút chung cho các màn hình phụ
+    backBtn.emplace_back(L"QUAY LẠI MENU", font, 520, 42);
 
- levelBtns.emplace_back(L"QUAY LẠI",  font, 500, 38);
-
- backBtn.emplace_back(L"QUAY LẠI MENU", font, 520, 42);
-// Nút chung cho màn hình CÀI ĐẶT và HƯỚNG DẪN.
- confirmBtns.emplace_back(L"CÓ, THOÁT", font, 320, 48);
-// Nút xác nhận THOÁT.
- confirmBtns.emplace_back(L"KHÔNG, Ở LẠI", font, 430, 48);
-// Nút hủy THOÁT.
+    // Xác nhận thoát game
+    confirmBtns.emplace_back(L"CÓ, THOÁT",     font, 320, 48);
+    confirmBtns.emplace_back(L"KHÔNG, Ở LẠI", font, 430, 48);
 }
 
+// Khi cửa sổ bị resize (kéo to/thu nhỏ)
 void Menu::resize(float w, float h) {
-// Hàm xử lý khi cửa sổ game thay đổi kích thước.
- winW = w;
-// Cập nhật chiều rộng cửa sổ hiện tại.
- winH = h;
-// Cập nhật chiều cao cửa sổ hiện tại.
- recalcScale();
-// Gọi hàm tính toán lại tỷ lệ Responsive.
+    winW = w;
+    winH = h;
+    recalcScale();                                // Cập nhật lại tỉ lệ và nền
 }
 
+// Xử lý tất cả sự kiện: chuột di chuyển, click, cuộn chuột...
 void Menu::handleEvent(sf::RenderWindow& win, sf::Event& e) {
-// Hàm xử lý sự kiện (chuột, phím, cuộn...).
- sf::Vector2f m = win.mapPixelToCoords(sf::Mouse::getPosition(win));
-// Lấy tọa độ chuột hiện tại (đã chuyển đổi sang tọa độ thế giới/view).
+    sf::Vector2f m = win.mapPixelToCoords(sf::Mouse::getPosition(win)); // Tọa độ chuột chính xác
 
- if (e.type == sf::Event::MouseMoved) {
-// Nếu sự kiện là di chuyển chuột:
- auto check = [&](auto& v) { for (auto& b : v) b.hovered = b.contains(m.x, m.y); };
-// Tạo một hàm lambda (hàm ẩn danh) để kiểm tra trạng thái hover cho một vector nút bất kỳ (v).
- if (state == MAIN_MENU) check(mainBtns);
-// Kiểm tra hover cho Menu chính.
- else if (state == MODE_SELECT) check(modeBtns);
-// Kiểm tra hover cho màn hình Chọn chế độ.
- else if (state == LEVEL_SELECT) check(levelBtns);
- else if (state == CONFIRM_EXIT) check(confirmBtns);
- else check(backBtn);
-// Các màn hình còn lại (HOW_TO_PLAY, SETTINGS) chỉ cần kiểm tra nút backBtn.
- }
+    // Xử lý hover (chuột di chuyển)
+    if (e.type == sf::Event::MouseMoved) {
+        auto check = [&](auto& v) { for (auto& b : v) b.hovered = b.contains(m.x, m.y); };
+        if (state == MAIN_MENU)      check(mainBtns);
+        else if (state == MODE_SELECT) check(modeBtns);
+        else if (state == LEVEL_SELECT) check(levelBtns);
+        else if (state == CONFIRM_EXIT) check(confirmBtns);
+        else                            check(backBtn); // HOW_TO_PLAY, SETTINGS
+    }
 
- if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left) {
-// Nếu sự kiện là nhấn chuột trái:
- if (state == MAIN_MENU) {
-// Xử lý click trong Menu chính:
-  if (mainBtns[0].contains(m.x, m.y)) state = MODE_SELECT;
-// Nếu click vào nút 0 (BẮT ĐẦU), chuyển sang trạng thái MODE_SELECT.
-  if (mainBtns[1].contains(m.x, m.y)) state = HOW_TO_PLAY;
-  if (mainBtns[2].contains(m.x, m.y)) state = SETTINGS;
-  if (mainBtns[3].contains(m.x, m.y)) state = CONFIRM_EXIT;
- }
- else if (state == MODE_SELECT) {
-// Xử lý click trong Chọn chế độ:
-  if (modeBtns[0].contains(m.x, m.y)) { pvp = true;  state = LEVEL_SELECT; }
-// Nếu chọn PvP, đặt cờ pvp=true và chuyển sang LEVEL_SELECT.
-  if (modeBtns[1].contains(m.x, m.y)) { pvp = false; state = LEVEL_SELECT; }
-// Nếu chọn PvC, đặt cờ pvp=false và chuyển sang LEVEL_SELECT.
-  if (modeBtns[2].contains(m.x, m.y)) state = MAIN_MENU;
-// Nếu click "QUAY LẠI", chuyển về MAIN_MENU.
- }
- else if (state == LEVEL_SELECT) {
-// Xử lý click trong Chọn độ khó:
-  if (levelBtns[0].contains(m.x, m.y)) { level = 0; state = pvp ? GAME_PVP : GAME_PVC; }
-// Nếu chọn DỄ (level=0), chuyển sang trạng thái chơi game (PvP hoặc PvC tùy pvp).
-  if (levelBtns[1].contains(m.x, m.y)) { level = 1; state = pvp ? GAME_PVP : GAME_PVC; }
-// Nếu chọn TRUNG BÌNH (level=1).
-  if (levelBtns[2].contains(m.x, m.y)) { level = 2; state = pvp ? GAME_PVP : GAME_PVC; }
-// Nếu chọn KHÓ (level=2).
-  if (levelBtns[3].contains(m.x, m.y)) state = MODE_SELECT;
-// Nếu click "QUAY LẠI", chuyển về MODE_SELECT.
- }
- else if (state == SETTINGS || state == HOW_TO_PLAY) {
-// Xử lý click trong CÀI ĐẶT và HƯỚNG DẪN:
-  if (backBtn[0].contains(m.x, m.y)) state = MAIN_MENU;
-// Nếu click nút "QUAY LẠI MENU", chuyển về MAIN_MENU.
- }
- else if (state == CONFIRM_EXIT) {
-// Xử lý click trong Xác nhận thoát:
-  if (confirmBtns[0].contains(m.x, m.y)) win.close();
-// Nếu click "CÓ, THOÁT", đóng cửa sổ game.
-  if (confirmBtns[1].contains(m.x, m.y)) state = MAIN_MENU;
-// Nếu click "KHÔNG, Ở LẠI", chuyển về MAIN_MENU.
- }
- }
+    // Xử lý click chuột trái
+    if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left) {
+        if (state == MAIN_MENU) {
+            if (mainBtns[0].contains(m.x, m.y)) state = MODE_SELECT;
+            if (mainBtns[1].contains(m.x, m.y)) state = HOW_TO_PLAY;
+            if (mainBtns[2].contains(m.x, m.y)) state = SETTINGS;
+            if (mainBtns[3].contains(m.x, m.y)) state = CONFIRM_EXIT;
+        }
+        else if (state == MODE_SELECT) {
+            if (modeBtns[0].contains(m.x, m.y)) { pvp = true;  state = LEVEL_SELECT; }
+            if (modeBtns[1].contains(m.x, m.y)) { pvp = false; state = LEVEL_SELECT; }
+            if (modeBtns[2].contains(m.x, m.y)) state = MAIN_MENU;
+        }
+        else if (state == LEVEL_SELECT) {
+            if (levelBtns[0].contains(m.x, m.y)) { level = 0; state = pvp ? GAME_PVP : GAME_PVC; }
+            if (levelBtns[1].contains(m.x, m.y)) { level = 1; state = pvp ? GAME_PVP : GAME_PVC; }
+            if (levelBtns[2].contains(m.x, m.y)) { level = 2; state = pvp ? GAME_PVP : GAME_PVC; }
+            if (levelBtns[3].contains(m.x, m.y)) state = MODE_SELECT;
+        }
+        else if (state == SETTINGS || state == HOW_TO_PLAY) {
+            if (backBtn[0].contains(m.x, m.y)) state = MAIN_MENU;
+        }
+        else if (state == CONFIRM_EXIT) {
+            if (confirmBtns[0].contains(m.x, m.y)) win.close();      // Thoát game
+            if (confirmBtns[1].contains(m.x, m.y)) state = MAIN_MENU; // Hủy thoát
+        }
+    }
 
- if (state == HOW_TO_PLAY && e.type == sf::Event::MouseWheelScrolled)
-// Nếu đang ở màn hình HƯỚNG DẪN và có sự kiện cuộn chuột.
- scrollOffset += e.mouseWheelScroll.delta * 70;
-// Cập nhật độ lệch cuộn: delta là hướng cuộn, nhân 70 để tăng tốc độ cuộn.
+    // Cuộn chuột trong màn hình hướng dẫn
+    if (state == HOW_TO_PLAY && e.type == sf::Event::MouseWheelScrolled)
+        scrollOffset += e.mouseWheelScroll.delta * 70; // Cuộn nội dung lên/xuống
 }
 
+// Cập nhật animation mỗi frame
 void Menu::update() {
-// Hàm cập nhật logic game (không liên quan đến sự kiện).
- animTime += 1.0f / 60.0f;
-// Tăng biến thời gian animation lên 1/60 giây (giả sử FPS là 60).
- for (auto& b : mainBtns)  b.update(1.0f / 60.0f);
-// Cập nhật hiệu ứng cho từng nút trong mainBtns.
- for (auto& b : modeBtns)  b.update(1.0f / 60.0f);
-// ... và các vector nút khác.
- for (auto& b : levelBtns)  b.update(1.0f / 60.0f);
- for (auto& b : backBtn)  b.update(1.0f / 60.0f);
- for (auto& b : confirmBtns)b.update(1.0f / 60.0f);
+    animTime += 1.0f / 60.0f;                     // Tăng thời gian animation (giả sử 60 FPS)
+    for (auto& b : mainBtns)   b.update(1.0f / 60.0f);
+    for (auto& b : modeBtns)   b.update(1.0f / 60.0f);
+    for (auto& b : levelBtns)  b.update(1.0f / 60.0f);
+    for (auto& b : backBtn)    b.update(1.0f / 60.0f);
+    for (auto& b : confirmBtns)b.update(1.0f / 60.0f);
 }
 
+// Vẽ toàn bộ menu lên màn hình
 void Menu::draw(sf::RenderWindow& win) {
-// Hàm vẽ giao diện lên cửa sổ.
- win.draw(bg);
-// Vẽ hình nền.
+    win.draw(bg);                                 // Vẽ nền vũ trụ trước tiên
 
- float centerX = win.getSize().x / 2.0f;
-// Tính toán lại tâm X của cửa sổ.
+    float centerX = win.getSize().x / 2.0f;       // Tâm ngang cửa sổ
 
- // Logo chính
- if (state == MAIN_MENU || state == CONFIRM_EXIT) {
-// Chỉ vẽ Logo nếu đang ở Menu chính hoặc Xác nhận thoát.
- title.setCharacterSize(static_cast<unsigned>(96 * scaleY));
-// Điều chỉnh kích thước font của Logo theo tỷ lệ Responsive Y (scaleY).
- title.setOrigin(title.getLocalBounds().width / 2, title.getLocalBounds().height / 2);
-// Căn giữa Text (cần gọi lại vì kích thước chữ thay đổi có thể làm thay đổi kích thước bounding box).
- title.setPosition(centerX, 90 * scaleY);
-// Đặt vị trí Logo (Y cơ sở 90, có tính Responsive).
- title.setOutlineThickness(4 + 0.8f * sin(animTime * 2));
-// Tạo hiệu ứng viền chữ "thở" (pulsing effect) bằng hàm sin().
- win.draw(title);
-// Vẽ Logo.
- }
+    // Vẽ logo chính với hiệu ứng "thở"
+    if (state == MAIN_MENU || state == CONFIRM_EXIT) {
+        title.setCharacterSize(static_cast<unsigned>(96 * scaleY)); // Resize chữ theo cửa sổ
+        centerText(title);                        // Cập nhật lại gốc tọa độ
+        title.setPosition(centerX, 90 * scaleY);
+        title.setOutlineThickness(4 + 0.8f * sin(animTime * 2)); // Viền nhấp nháy
+        win.draw(title);
+    }
 
- // Vẽ nút
- if (state == MAIN_MENU)  for (auto& b : mainBtns)  b.draw(win, scaleX, scaleY);
-// Nếu Menu chính, vẽ các nút mainBtns.
- else if (state == MODE_SELECT)  for (auto& b : modeBtns)  b.draw(win, scaleX, scaleY);
- else if (state == LEVEL_SELECT)  for (auto& b : levelBtns)  b.draw(win, scaleX, scaleY);
- else if (state == HOW_TO_PLAY || state == SETTINGS) backBtn[0].draw(win, scaleX, scaleY);
-// Nếu HƯỚNG DẪN hoặc CÀI ĐẶT, chỉ vẽ nút "QUAY LẠI MENU" (chỉ có 1 nút trong backBtn).
- else if (state == CONFIRM_EXIT)  for (auto& b : confirmBtns) b.draw(win, scaleX, scaleY);
+    // Vẽ các nút tương ứng với trạng thái hiện tại
+    if (state == MAIN_MENU)      for (auto& b : mainBtns)   b.draw(win, scaleX, scaleY);
+    else if (state == MODE_SELECT) for (auto& b : modeBtns)   b.draw(win, scaleX, scaleY);
+    else if (state == LEVEL_SELECT) for (auto& b : levelBtns)  b.draw(win, scaleX, scaleY);
+    else if (state == HOW_TO_PLAY || state == SETTINGS) backBtn[0].draw(win, scaleX, scaleY);
+    else if (state == CONFIRM_EXIT) for (auto& b : confirmBtns) b.draw(win, scaleX, scaleY);
 
- // Tiêu đề phụ
- sf::Text header;
-// Khởi tạo đối tượng Text cho tiêu đề phụ (HEADER).
- header.setFont(font);
- header.setFillColor(sf::Color(100, 230, 255));
- header.setOutlineThickness(5);
- header.setOutlineColor(sf::Color::Cyan);
- header.setOrigin(header.getLocalBounds().width / 2, header.getLocalBounds().height / 2);
- header.setPosition(centerX, 100 * scaleY);
-// Thiết lập vị trí Header (Y cơ sở 100).
+    // Vẽ tiêu đề phụ cho từng màn hình
+    sf::Text header;
+    header.setFont(font);
+    header.setFillColor(sf::Color(100, 230, 255));
+    header.setOutlineColor(sf::Color::Cyan);
+    header.setOutlineThickness(5);
 
- if (state == MODE_SELECT) {
-// Nếu đang ở màn hình Chọn chế độ:
- if (state == MODE_SELECT) {
-    header.setString(L"CHỌN CHẾ ĐỘ CHƠI");
-    header.setCharacterSize(static_cast<unsigned>(72 * scaleY));
+    if (state == MODE_SELECT) {
+        header.setString(L"CHỌN CHẾ ĐỘ CHƠI");
+        header.setCharacterSize(static_cast<unsigned>(72 * scaleY));
+        centerText(header);
+        header.setPosition(centerX, 100 * scaleY);
+        win.draw(header);
+    }
+    else if (state == LEVEL_SELECT) {
+        header.setString(L"CHỌN ĐỘ KHÓ");
+        header.setCharacterSize(static_cast<unsigned>(72 * scaleY));
+        centerText(header);
+        header.setPosition(centerX, 100 * scaleY);
+        win.draw(header);
+    }
+    else if (state == SETTINGS) {
+        header.setString(L"CÀI ĐẶT");
+        header.setCharacterSize(static_cast<unsigned>(82 * scaleY));
+        centerText(header);
+        header.setPosition(centerX, 130 * scaleY);
+        win.draw(header);
 
-    header.setOrigin(header.getLocalBounds().width / 2, 
-                     header.getLocalBounds().height / 2);
-    header.setPosition(centerX, 100 * scaleY);
-
-    win.draw(header);
-}
-// Điều chỉnh kích thước font.
-// Vẽ Header.
- }
- else if (state == LEVEL_SELECT) {
-// Nếu đang ở màn hình Chọn độ khó:
- header.setString(L"CHỌN ĐỘ KHÓ");
-    header.setCharacterSize(static_cast<unsigned>(72 * scaleY));
-
-    header.setOrigin(header.getLocalBounds().width / 2, 
-                     header.getLocalBounds().height / 2);
-    header.setPosition(centerX, 100 * scaleY);
-
-    win.draw(header);
- }
- else if (state == SETTINGS) {
-// Nếu đang ở màn hình Cài đặt:
-  header.setString(L"CÀI ĐẶT");
-    header.setCharacterSize(static_cast<unsigned>(82 * scaleY));
-
-    header.setOrigin(header.getLocalBounds().width / 2, 
-                     header.getLocalBounds().height / 2);
-    header.setPosition(centerX, 130 * scaleY);
-
-    win.draw(header);
-
- sf::Text msg(L"Tính năng sẽ được cập nhật\ntrong phiên bản tiếp theo!\n\nCảm ơn bạn đã chơi <3", font,
-// Tạo thông báo cho màn hình Cài đặt (chưa có tính năng).
-   static_cast<unsigned>(46 * scaleY));
-// Thiết lập kích thước font.
- msg.setFillColor(sf::Color(200, 255, 200));
- msg.setOrigin(msg.getLocalBounds().width / 2, msg.getLocalBounds().height / 2);
-msg.setPosition(centerX, 330 * scaleY);
-// Đặt vị trí thông báo (Y cơ sở 330).
-win.draw(msg);
-// Vẽ thông báo.
-}
+        sf::Text msg(L"Tính năng sẽ được cập nhật\ntrong phiên bản tiếp theo!\n\nCảm ơn bạn đã chơi <3", font,
+                     static_cast<unsigned>(46 * scaleY));
+        msg.setFillColor(sf::Color(200, 255, 200));
+        centerText(msg);
+        msg.setPosition(centerX, 330 * scaleY);
+        win.draw(msg);
+    }
 }
