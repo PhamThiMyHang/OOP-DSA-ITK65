@@ -1,39 +1,29 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "cppbuild",
-			"label": "C/C++: g++.exe build active file",
-			"command": "g++",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${file}",
-				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}.exe"
-			],
-			
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"detail": "compiler: C:/msys64/ucrt64/bin/g++.exe"
-		},
-		{
-      "label": "Run C++ executable",
-      "type": "shell",
-      "command": "${fileDirname}/${fileBasenameNoExtension}.exe",
-      "dependsOn": "C/C++: g++.exe build active file",
-      "group": "none",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-	}
-	]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build SFML 2.6.0",
+            "type": "shell",
+            "command": "C:/msys64/mingw64/bin/g++.exe",
+            "args": [
+                "${workspaceFolder}/main.cpp",
+
+                "-IC:/msys64/mingw64/include",
+                "-LC:/msys64/mingw64/lib",
+
+                "-lsfml-graphics",
+                "-lsfml-window",
+                "-lsfml-system",
+                "-lopengl32",
+
+                "-o",
+                "${workspaceFolder}/main.exe"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
 }

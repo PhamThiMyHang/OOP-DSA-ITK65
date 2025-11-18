@@ -15,6 +15,7 @@ public:
     void taoKeyNgauNhien(int length = 5);
     string getKey() const;
     void doanKey(const string& keyToGuess);
+    string getTen();
 };
 
 #endif

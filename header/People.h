@@ -8,7 +8,8 @@ class People {
 private:
     string ID;
     string ten;
-    string key;        
+    string key;
+            
 public:
     People();
     void nhapTen();
@@ -20,6 +21,7 @@ public:
     bool doanKey(const string& keyToGuess);
     // lấy key để người khác đoán
     string getKey() const;
+    string getTen();
 };
 
 #endif

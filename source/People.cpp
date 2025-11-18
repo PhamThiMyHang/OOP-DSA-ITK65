@@ -67,3 +67,6 @@ bool People::doanKey(const string& keyToGuess) {
 string People::getKey() const {
     return key;
 }
+string People::getTen() { 
+    return ten; 
+}

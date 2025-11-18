@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 
+
 Computer::Computer() {
     ten = "MayTinh";
     key = "";
@@ -44,3 +45,6 @@ void Computer::doanKey(const string& keyToGuess) {
         cout << "May tinh doan sai! KEY dung la: " << keyToGuess << endl;
     }
 }
+ string Computer::getTen() {
+     return ten;
+    }

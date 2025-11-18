@@ -66,23 +66,30 @@ void NguoiQuanTro::hamTaoCacNguoiChoi() {
 
 // ======================= GỢI Ý ==========================
 void NguoiQuanTro::showHint(string guess) {
-    int correct = L.checkKey(guess); // kiểm tra theo cấp độ
-    if (L.getLevelId() == 1) {
-        // Level dễ: hiển thị vị trí đúng
-        cout << "Goi y (vi tri dung): ";
-        for (int i = 0; i < guess.size(); ++i) {
-            if (guess[i] == keyBiMat[i]) cout << guess[i];
-            else cout << "_";
+    int correct = 0;
+    string hint = "";
+
+    // Đếm số ký tự đúng vị trí
+    for (int i = 0; i < guess.size() && i < keyBiMat.size(); ++i) {
+        if (guess[i] == keyBiMat[i]) {
+            correct++;
+            hint += guess[i];
+        } else {
+            hint += "_";
         }
-        cout << endl;
+    }
+
+    // Tuỳ level mà thông báo khác nhau
+    if (L.getLevelId() == 1) {
+        cout << "Goi y (vi tri dung): " << hint
+             << "  --> " << correct << " ky tu dung vi tri.\n";
     } else if (L.getLevelId() == 2) {
-        // Level TB: chỉ thông báo số ký tự đúng
         cout << "Ban doan dung " << correct << " so!\n";
     } else {
-        // Level khó: chỉ thông báo số ký tự đúng (chữ + số)
         cout << "Ban doan dung " << correct << " ky tu!\n";
     }
 }
+
 
 // ======================= LỊCH SỬ ==========================
 void NguoiQuanTro::showHistory() {
@@ -97,35 +104,54 @@ void NguoiQuanTro::showHistory() {
 void NguoiQuanTro::play() {
     history.clear();
     string guess;
-    int luot = 4 + (3 - L.getLevelId()); // dễ 6, tb 5, khó 4 lượt
+    int luotToiDa = 30; // Giới hạn tổng lượt chơi (có thể đổi 30–50 tùy bạn)
+    bool found = false;
 
     cout << "\n=== BAT DAU TRO CHOI ===\n";
     cout << "Key co do dai " << maxLength << " ky tu.\n";
-    cout << "Ban co " << luot << " luot doan.\n";
+    cout << "Moi nguoi co " << luotToiDa / 2 << " luot doan.\n";
 
-    while (luot-- > 0) {
-        cout << "\nNhap key ban doan: ";
+    for (int turn = 1; turn <= luotToiDa && !found; ++turn) {
+        int currentPlayer = (turn % 2 == 1) ? 0 : 1; // Người 1 lẻ, người 2 chẵn
+        string playerName = (mode == 1 && currentPlayer == 1) ? c.getTen() : a[currentPlayer].getTen();
+
+        cout << "\nLuot " << turn << ": " << playerName << " doan.\n";
+        cout << "Nhap key ban doan: ";
         getline(cin, guess);
-        history.push_back(guess);
+
+        history.push_back(playerName + ": " + guess);
 
         if (guess == keyBiMat) {
-            cout << "\nChinh xac! Ban da doan dung KEY!\n";
-            diemNguoi1++;
+            cout << "\n Chinh xac! " << playerName << " da doan dung KEY!\n";
+            if (currentPlayer == 0)
+                diemNguoi1++;
+            else
+                diemNguoi2++;
+            found = true;
             break;
         } else {
             cout << "Sai roi!\n";
-            showHint(guess);
+
+            // Chỉ gợi ý khi người chơi yêu cầu
+            char hoi;
+            cout << "Ban co muon goi y khong (y/n)? ";
+            cin >> hoi;
+            cin.ignore();
+            if (hoi == 'y' || hoi == 'Y')
+                showHint(guess);
+
             showHistory();
-            cout << "Con " << luot << " luot.\n";
+            cout << "Con " << (luotToiDa - turn) << " luot con lai.\n";
         }
     }
 
-    if (luot < 0) {
+    if (!found) {
         cout << "\nHet luot! Key dung la: " << keyBiMat << endl;
     }
 
     ketThucVan();
 }
+
 
 // ======================= KẾT THÚC ==========================
 int NguoiQuanTro::ketThucVan() {
