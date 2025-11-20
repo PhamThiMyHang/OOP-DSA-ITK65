@@ -1,0 +1,102 @@
+/*{
+    "configurations": [
+        {
+            "name": "MSYS2-UCRT64",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/header",
+                "C:/mingw64/include",
+                "C:/mingw64/include/c++/13.2.0",
+                "C:/mingw64/include/c++/13.2.0/x86_64-w64-mingw32"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}
+*//*
+{
+    "configurations": [
+        {
+            "name": "MSYS2-UCRT64-SFML",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/header",
+                // Đường dẫn mặc định của MinGW-w64 (GCC/G++)
+                "C:/mingw64/include", 
+                "C:/mingw64/include/c++/13.2.0",
+                "C:/mingw64/include/c++/13.2.0/x86_64-w64-mingw32",
+                // THÊM: Đường dẫn include của SFML 2.6.2
+                "C:/mingw64/include/SFML" 
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}*//*
+{
+    "configurations": [
+        {
+            "name": "MSYS2-UCRT64-SFML",
+            "includePath": [
+                "${workspaceFolder}/**",
+                // THÊM: Đường dẫn include của SFML trong thư mục làm việc
+                "${workspaceFolder}/SFML/include", 
+                "${workspaceFolder}/header",
+                // Giữ lại đường dẫn MinGW-w64 cho các header chuẩn
+                "C:/mingw64/include", 
+                "C:/mingw64/include/c++/13.2.0",
+                "C:/mingw64/include/c++/13.2.0/x86_64-w64-mingw32"
+            ],
+            // ... (các phần khác giữ nguyên)
+            "compilerPath": "C:/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}*/
+{
+    "configurations": [
+        {
+            "name": "MSYS2-UCRT64-SFML",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/header",
+                // THÊM: Đường dẫn header của SFML trong thư mục làm việc
+                "${workspaceFolder}/SFML-2.6.2/include", 
+                // Đường dẫn chuẩn của MinGW-w64 (GCC/G++)
+                "C:/mingw64/include", 
+                "C:/mingw64/include/c++/13.2.0",
+                "C:/mingw64/include/c++/13.2.0/x86_64-w64-mingw32"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64"
+        }
+    ],
+    "version": 4
+}

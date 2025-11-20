@@ -1,0 +1,12 @@
+# Cac file thuc thi
+*.exe
+*.dll
+
+# Thu vien ngoai va file tam
+SFML-2.6.2/
+User1
+User2
+
+# File duoc sinh ra khi bien dich
+*.o
+
